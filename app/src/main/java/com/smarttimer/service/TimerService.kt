@@ -6,6 +6,7 @@ import android.os.Binder
 import android.os.IBinder
 import com.smarttimer.data.local.entity.WorkflowWithTimers
 import com.smarttimer.util.SoundPlayer
+import com.smarttimer.util.TtsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +22,7 @@ class TimerService : Service() {
     private var timerExecutor: TimerExecutor? = null
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var soundPlayer: SoundPlayer
+    private lateinit var ttsManager: TtsManager
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     // Persistent state flow that always exists
@@ -31,6 +33,7 @@ class TimerService : Service() {
         super.onCreate()
         notificationHelper = NotificationHelper(this)
         soundPlayer = SoundPlayer(this)
+        ttsManager = TtsManager(this)
     }
 
     override fun onBind(intent: Intent): IBinder = binder
@@ -43,6 +46,7 @@ class TimerService : Service() {
         timerExecutor = TimerExecutor(
             workflow = workflow,
             soundPlayer = soundPlayer,
+            ttsManager = ttsManager,
             onWorkflowComplete = {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -87,6 +91,7 @@ class TimerService : Service() {
     override fun onDestroy() {
         timerExecutor?.stop()
         soundPlayer.release()
+        ttsManager.release()
         serviceScope.cancel()
         super.onDestroy()
     }
