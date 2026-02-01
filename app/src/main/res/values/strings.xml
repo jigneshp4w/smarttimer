@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart Timer</string>
+    <string name="tab_configuration">Configuration</string>
+    <string name="tab_execution">Execution</string>
+    <string name="timer_notification_channel_name">Timer Service</string>
+    <string name="timer_notification_channel_desc">Shows timer execution status</string>
+    <string name="timer_running">Timer Running</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="10.8"
+        android:translateY="10.8">
+        <!-- Timer Icon -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,18C36.3,18 22,32.3 22,50s14.3,32 32,32 32,-14.3 32,-32S71.7,18 54,18zM54,76c-14.4,0 -26,-11.6 -26,-26s11.6,-26 26,-26 26,11.6 26,26S68.4,76 54,76z"/>
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M52,32h4v22l16,9.5 -2,3.5 -18,-11z"/>
+    </group>
+</vector>

@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Debug APK",
+      "type": "shell",
+      "command": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home gradle assembleDebug",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install on Device",
+      "type": "shell",
+      "command": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home gradle installDebug",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean Build",
+      "type": "shell",
+      "command": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home gradle clean",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build and Install",
+      "type": "shell",
+      "command": "JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home gradle installDebug",
+      "dependsOn": ["Build Debug APK"],
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run on Emulator",
+      "type": "shell",
+      "command": "./run-app.sh",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
+      "label": "Launch App (device already running)",
+      "type": "shell",
+      "command": "~/Library/Android/sdk/platform-tools/adb shell am start -n com.smarttimer/.MainActivity",
+      "group": "none",
+      "problemMatcher": []
+    }
+  ]
+}
