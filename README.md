@@ -6,9 +6,13 @@ A native Android timer application that allows users to create and execute seque
 
 - **Workflow Management**: Create multiple timer workflows, each containing sequential timers
 - **Custom Timers**: Add timers with custom labels and durations (minutes and seconds)
-- **Configurable Alerts**: Set alert duration per workflow (1-10 seconds)
+- **Configurable Wait Period**: Set wait period between tasks (up to 5 minutes)
+- **Voice Announcements (TTS)**: Speaks workflow and task names at start/completion (toggleable per workflow)
+- **Vibration Alerts**: Device vibrates during wait periods between tasks (toggleable per workflow)
 - **Sequential Execution**: Timers execute automatically one after another
 - **Background Service**: Reliable foreground service ensures timers run even when app is minimized
+- **Navigation Lock**: Prevents switching tabs while a workflow is running
+- **Auto-Resume**: Automatically returns to running timer when app is reopened
 - **Material Design 3**: Beautiful, modern UI with dynamic color support (Android 12+)
 - **Fully Offline**: Works completely without internet connection
 
@@ -46,6 +50,8 @@ com.smarttimer/
 │   └── NotificationHelper.kt     # Notification management
 └── util/                          # Utility classes
     ├── SoundPlayer.kt            # Alert sound playback
+    ├── TtsManager.kt             # Text-to-speech announcements
+    ├── VibrationManager.kt       # Vibration alerts
     └── TimeFormatter.kt          # Time formatting utilities
 ```
 
@@ -103,11 +109,16 @@ com.smarttimer/
 
 ### Timer Behavior
 
+- Voice announces workflow name when starting (if TTS enabled)
 - Timers execute sequentially in the order they were added
+- Voice announces each task name when starting (if TTS enabled)
 - When a timer completes:
-  - Alert sound plays for the configured duration
-  - Timer is marked complete
-  - Next timer starts automatically
+  - Voice announces task completion (if TTS enabled)
+  - Alert sound plays during wait period
+  - Device vibrates during wait period (if vibration enabled)
+  - Wait period countdown is displayed on screen
+  - Next timer starts automatically after wait period
+- Voice announces workflow completion (if TTS enabled)
 - Workflow completes when all timers finish
 
 ## Database Schema
@@ -116,7 +127,9 @@ com.smarttimer/
 - `id`: Primary key (auto-generated)
 - `name`: Workflow name
 - `description`: Optional description
-- `alertDurationSeconds`: Alert duration (1-10 seconds, default: 3)
+- `alertDurationSeconds`: Wait period between tasks (1-300 seconds, default: 3)
+- `ttsEnabled`: Voice announcements enabled (default: true)
+- `vibrationEnabled`: Vibration alerts enabled (default: true)
 - `createdAt`: Creation timestamp
 - `updatedAt`: Last update timestamp
 
@@ -135,6 +148,7 @@ The app requires the following permissions:
 - `FOREGROUND_SERVICE`: For reliable background timer execution
 - `POST_NOTIFICATIONS`: For timer notifications (Android 13+)
 - `WAKE_LOCK`: To keep device awake during timer execution
+- `VIBRATE`: For vibration alerts during wait periods
 
 ## Testing
 
@@ -188,10 +202,11 @@ The app requires the following permissions:
 - [ ] Timer reordering (drag and drop)
 - [ ] Workflow categories/tags
 - [ ] Custom alert sounds
-- [ ] Timer pause between workflows
 - [ ] Statistics and history
 - [ ] Export/import workflows
 - [ ] Widget support
+- [ ] Repeat workflow option
+- [ ] Timer templates
 
 ## License
 
