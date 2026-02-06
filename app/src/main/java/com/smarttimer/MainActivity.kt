@@ -1,5 +1,6 @@
 package com.smarttimer
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.smarttimer.presentation.navigation.NavGraph
 import com.smarttimer.presentation.navigation.Screen
 import com.smarttimer.presentation.theme.SmartTimerTheme
+import com.smarttimer.service.TimerService
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -27,6 +29,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Stop the timer service when the app is closed
+        if (isFinishing) {
+            val intent = Intent(this, TimerService::class.java)
+            stopService(intent)
+        }
+    }
 }
 
 @Composable
@@ -34,6 +45,18 @@ fun SmartTimerApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Observe workflow running state
+    val isTimerRunning by TimerService.isWorkflowRunning.collectAsState()
+
+    // Auto-navigate to Execution when timer starts running
+    LaunchedEffect(isTimerRunning, currentRoute) {
+        if (isTimerRunning && currentRoute != Screen.Execution.route) {
+            navController.navigate(Screen.Execution.route) {
+                popUpTo(Screen.Configuration.route)
+            }
+        }
+    }
 
     // Determine if we should show bottom navigation
     val showBottomBar = when (currentRoute) {
@@ -49,9 +72,12 @@ fun SmartTimerApp() {
                         icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                         label = { Text("Configuration") },
                         selected = currentRoute == Screen.Configuration.route,
+                        enabled = !isTimerRunning,
                         onClick = {
-                            navController.navigate(Screen.Configuration.route) {
-                                popUpTo(Screen.Configuration.route) { inclusive = true }
+                            if (!isTimerRunning) {
+                                navController.navigate(Screen.Configuration.route) {
+                                    popUpTo(Screen.Configuration.route) { inclusive = true }
+                                }
                             }
                         }
                     )

@@ -4,7 +4,9 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -13,6 +15,7 @@ class TtsManager(context: Context) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var isInitialized = false
+    private val initializationDeferred = CompletableDeferred<Boolean>()
 
     init {
         tts = TextToSpeech(context.applicationContext, this)
@@ -33,6 +36,18 @@ class TtsManager(context: Context) : TextToSpeech.OnInitListener {
             Log.e(TAG, "TTS initialization failed with status: $status")
             isInitialized = false
         }
+        initializationDeferred.complete(isInitialized)
+    }
+
+    /**
+     * Suspends until TTS is initialized or times out after the specified duration.
+     * Returns true if initialized successfully, false otherwise.
+     */
+    suspend fun awaitInitialization(timeoutMs: Long = 3000L): Boolean {
+        if (isInitialized) return true
+        return withTimeoutOrNull(timeoutMs) {
+            initializationDeferred.await()
+        } ?: false
     }
 
     fun speak(text: String) {

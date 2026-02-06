@@ -14,7 +14,11 @@ sealed class TimerState {
         val totalTimers: Int
     ) : TimerState()
 
-    data class AlertPlaying(val completedTimer: TimerEntity) : TimerState()
+    data class AlertPlaying(
+        val completedTimer: TimerEntity,
+        val waitRemainingSeconds: Int = 0,
+        val waitTotalSeconds: Int = 0
+    ) : TimerState()
 
     object Paused : TimerState()
 

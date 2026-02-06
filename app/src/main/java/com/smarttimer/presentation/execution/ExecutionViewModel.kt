@@ -12,13 +12,15 @@ import com.smarttimer.data.repository.WorkflowRepository
 import com.smarttimer.service.TimerService
 import com.smarttimer.service.TimerState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ExecutionViewModel @Inject constructor(
-    private val workflowRepository: WorkflowRepository
+    private val workflowRepository: WorkflowRepository,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _selectedWorkflow = MutableStateFlow<WorkflowWithTimers?>(null)
@@ -36,6 +38,11 @@ class ExecutionViewModel @Inject constructor(
             timerService = binder.getService()
             serviceBound = true
 
+            // Check if service is already running a workflow
+            if (timerService?.isRunning() == true) {
+                _selectedWorkflow.value = timerService?.getCurrentWorkflow()
+            }
+
             // Collect timer state from service (now always available)
             viewModelScope.launch {
                 timerService?.getTimerState()?.collect { state ->
@@ -47,6 +54,20 @@ class ExecutionViewModel @Inject constructor(
         override fun onServiceDisconnected(name: ComponentName?) {
             timerService = null
             serviceBound = false
+        }
+    }
+
+    init {
+        // Check if a workflow is already running and reconnect
+        checkAndReconnectToRunningService()
+    }
+
+    private fun checkAndReconnectToRunningService() {
+        val intent = Intent(appContext, TimerService::class.java)
+        try {
+            appContext.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        } catch (e: Exception) {
+            // Service not available or other error, continue with normal flow
         }
     }
 
@@ -71,7 +92,11 @@ class ExecutionViewModel @Inject constructor(
         selectedWorkflow.value?.let { workflow ->
             val intent = Intent(context, TimerService::class.java)
             context.startForegroundService(intent)
-            context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+
+            // Only bind if not already bound
+            if (!serviceBound) {
+                context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            }
 
             viewModelScope.launch {
                 kotlinx.coroutines.delay(500) // Wait for service to bind
@@ -91,7 +116,11 @@ class ExecutionViewModel @Inject constructor(
     fun stopTimer(context: Context) {
         timerService?.stopTimer()
         if (serviceBound) {
-            context.unbindService(serviceConnection)
+            try {
+                context.unbindService(serviceConnection)
+            } catch (e: Exception) {
+                // Service may already be unbound
+            }
             serviceBound = false
         }
         _timerState.value = TimerState.Idle
@@ -100,6 +129,15 @@ class ExecutionViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        // Unbind from service when ViewModel is cleared
+        if (serviceBound) {
+            try {
+                appContext.unbindService(serviceConnection)
+            } catch (e: Exception) {
+                // Service may already be unbound
+            }
+            serviceBound = false
+        }
         timerService = null
     }
 }

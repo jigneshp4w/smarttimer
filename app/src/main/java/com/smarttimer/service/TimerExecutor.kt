@@ -3,6 +3,7 @@ package com.smarttimer.service
 import com.smarttimer.data.local.entity.WorkflowWithTimers
 import com.smarttimer.util.SoundPlayer
 import com.smarttimer.util.TtsManager
+import com.smarttimer.util.VibrationManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +13,7 @@ class TimerExecutor(
     private val workflow: WorkflowWithTimers,
     private val soundPlayer: SoundPlayer,
     private val ttsManager: TtsManager,
+    private val vibrationManager: VibrationManager,
     private val onWorkflowComplete: () -> Unit
 ) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -19,6 +21,9 @@ class TimerExecutor(
     private var currentJob: Job? = null
     private var isPaused = false
     private var remainingSeconds = 0
+
+    private val ttsEnabled = workflow.workflow.ttsEnabled
+    private val vibrationEnabled = workflow.workflow.vibrationEnabled
 
     private val _timerState = MutableStateFlow<TimerState>(TimerState.Idle)
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
@@ -29,8 +34,11 @@ class TimerExecutor(
             return
         }
         scope.launch {
-            // Announce workflow start
-            ttsManager.speakAndWait("Starting ${workflow.workflow.name}")
+            // Wait for TTS to initialize before first announcement
+            if (ttsEnabled) {
+                ttsManager.awaitInitialization()
+                ttsManager.speakAndWait("Starting ${workflow.workflow.name}")
+            }
             startNextTimer()
         }
     }
@@ -39,7 +47,9 @@ class TimerExecutor(
         if (currentTimerIndex >= workflow.timers.size) {
             scope.launch {
                 // Announce workflow completion
-                ttsManager.speakAndWait("${workflow.workflow.name} completed")
+                if (ttsEnabled) {
+                    ttsManager.speakAndWait("${workflow.workflow.name} completed")
+                }
                 _timerState.value = TimerState.Stopped
                 onWorkflowComplete()
             }
@@ -52,7 +62,9 @@ class TimerExecutor(
 
         currentJob = scope.launch {
             // Announce task start
-            ttsManager.speakAndWait("Starting ${currentTimer.label}")
+            if (ttsEnabled) {
+                ttsManager.speakAndWait("Starting ${currentTimer.label}")
+            }
 
             while (remainingSeconds > 0 && isActive) {
                 if (!isPaused) {
@@ -78,25 +90,43 @@ class TimerExecutor(
     }
 
     private suspend fun onTimerComplete(completedTimer: com.smarttimer.data.local.entity.TimerEntity) {
-        _timerState.value = TimerState.AlertPlaying(completedTimer)
+        val waitDurationSeconds = workflow.workflow.alertDurationSeconds
 
         // Announce task completion
-        ttsManager.speakAndWait("${completedTimer.label} completed")
+        if (ttsEnabled) {
+            ttsManager.speakAndWait("${completedTimer.label} completed")
+        }
 
         soundPlayer.playAlert()
 
-        // Use the configured alert duration from workflow
-        val alertDuration = workflow.workflow.alertDurationSeconds * 1000L
-        delay(alertDuration)
+        // Start vibration for the wait period
+        if (vibrationEnabled) {
+            vibrationManager.vibrate(waitDurationSeconds * 1000L)
+        }
+
+        // Countdown loop for wait period with UI updates
+        for (remaining in waitDurationSeconds downTo 1) {
+            _timerState.value = TimerState.AlertPlaying(
+                completedTimer = completedTimer,
+                waitRemainingSeconds = remaining,
+                waitTotalSeconds = waitDurationSeconds
+            )
+            delay(1000L)
+        }
 
         soundPlayer.stopAlert()
+        if (vibrationEnabled) {
+            vibrationManager.stop()
+        }
 
         currentTimerIndex++
         if (currentTimerIndex < workflow.timers.size) {
             startNextTimer()
         } else {
             // Announce workflow completion
-            ttsManager.speakAndWait("${workflow.workflow.name} completed")
+            if (ttsEnabled) {
+                ttsManager.speakAndWait("${workflow.workflow.name} completed")
+            }
             _timerState.value = TimerState.Stopped
             onWorkflowComplete()
         }
@@ -120,5 +150,6 @@ class TimerExecutor(
         _timerState.value = TimerState.Stopped
         ttsManager.stop()
         soundPlayer.release()
+        vibrationManager.stop()
     }
 }

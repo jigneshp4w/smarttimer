@@ -326,7 +326,35 @@ fun AlertPlayingContent(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        CircularProgressIndicator()
+        if (state.waitTotalSeconds > 0 && state.waitRemainingSeconds > 0) {
+            val progress = state.waitRemainingSeconds.toFloat() / state.waitTotalSeconds.toFloat()
+
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(120.dp)
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 8.dp,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Text(
+                    text = TimeFormatter.formatTime(state.waitRemainingSeconds),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Text(
+                text = "Wait Period",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            CircularProgressIndicator()
+        }
     }
 }
 

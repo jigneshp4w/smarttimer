@@ -18,6 +18,12 @@ data class WorkflowEntity(
     @ColumnInfo(name = "alert_duration_seconds")
     val alertDurationSeconds: Int = 3,
 
+    @ColumnInfo(name = "tts_enabled", defaultValue = "1")
+    val ttsEnabled: Boolean = true,
+
+    @ColumnInfo(name = "vibration_enabled", defaultValue = "1")
+    val vibrationEnabled: Boolean = true,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),
 

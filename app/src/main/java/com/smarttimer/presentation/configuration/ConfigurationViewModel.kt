@@ -28,13 +28,21 @@ class ConfigurationViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    fun createWorkflow(name: String, description: String?, alertDurationSeconds: Int = 3) {
+    fun createWorkflow(
+        name: String,
+        description: String?,
+        alertDurationSeconds: Int = 3,
+        ttsEnabled: Boolean = true,
+        vibrationEnabled: Boolean = true
+    ) {
         viewModelScope.launch {
             workflowRepository.insertWorkflow(
                 WorkflowEntity(
                     name = name,
                     description = description,
-                    alertDurationSeconds = alertDurationSeconds
+                    alertDurationSeconds = alertDurationSeconds,
+                    ttsEnabled = ttsEnabled,
+                    vibrationEnabled = vibrationEnabled
                 )
             )
         }

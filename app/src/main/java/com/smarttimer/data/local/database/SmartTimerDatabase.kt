@@ -11,8 +11,8 @@ import com.smarttimer.data.local.entity.WorkflowEntity
 
 @Database(
     entities = [WorkflowEntity::class, TimerEntity::class],
-    version = 1,
-    exportSchema = true
+    version = 2,
+    exportSchema = false
 )
 abstract class SmartTimerDatabase : RoomDatabase() {
     abstract fun workflowDao(): WorkflowDao
